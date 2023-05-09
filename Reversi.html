@@ -335,8 +335,9 @@
                 var size = board.length
                 var max = 0
                 var node = moves[0]
+                var arrText='';
                 moves.forEach(element => {
-                    var nextBoard = [...board]
+                    var nextBoard = this.board.clone(board)
                     var W = 0
                     var B = 0
                     this.board.move(nextBoard, element[0], element[1], this.color)
@@ -361,7 +362,7 @@
                         }   
                     }
                 })
-                for(var i=0; i<5000000000; i++){}
+                //for(var i=0; i<5000000000; i++){}
                 return node
             }
         }
