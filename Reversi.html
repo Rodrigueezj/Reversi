@@ -374,8 +374,8 @@
             }
 
             compute(board, time){
-                console.log(this.eval_minimax(this.board, 5, true))
-                const {evaluation, mov} = this.eval_minimax(this.board, 5, true);
+                console.log(this.eval_minimax(board, 5, true))
+                const {evaluation, mov} = this.eval_minimax(board, 5, true);
                 return mov
             }
 
@@ -401,9 +401,10 @@
             }
 
             eval_minimax(board, depth, max){
-
+                console.log('depth:')
+                console.log(depth)
                 if (depth == 0){    
-                    return {evaluation: point_counter(this.board), mov: [0,0]}
+                    return {evaluation: point_counter(board), mov: [0,0]}
                 }   
 
                 var node = [0,0]
@@ -411,16 +412,20 @@
                 if(max){
                     var max_eval = -1
                     var moves = this.board.valid_moves(board, this.color)
+                    console.log(moves)
                     moves.forEach(element => {
-                        temp_board = this.board.clone(board)
+                        var temp_board = this.board.clone(board)
                         this.board.move(temp_board, element[0], element[1], this.color)
-                        const {evaluation, mov} = this.eval_minimax(this.board, 5, true);
+                        const {evaluation, mov} = this.eval_minimax(temp_board, depth - 1, true);
 
                         if (evaluation > max_eval){
+                            console.log('ifff')
                             max_eval = evaluation
                             node = element
                         }
                     });
+                    console.log('max eval, node:')
+                    console.log(max_eval, node)
                     return { evaluation: max_eval, mov: node };
                 }
 
@@ -428,9 +433,9 @@
                     var min_eval = 65
                     var moves = this.board.valid_moves(board, rival_color())
                     moves.forEach(element => {
-                        temp_board = this.board.clone(board)
+                        var temp_board = this.board.clone(board)
                         this.board.move(temp_board, element[0], element[1], rival_color())
-                        const {evaluation, mov} = this.eval_minimax(this.board, 5, true);
+                        const {evaluation, mov} = this.eval_minimax(temp_board, depth - 1, true);
 
                         if (evaluation < min_eval){
                             min_eval = evaluation
