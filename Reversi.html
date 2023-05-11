@@ -367,6 +367,85 @@
             }
         }
 
+        class MinimaxPlayer extends Agent{
+            constructor(){
+            super()
+            this.board = new Board()
+            }
+
+            compute(board, time){
+                console.log(this.eval_minimax(this.board, 5, true))
+                const {evaluation, mov} = this.eval_minimax(this.board, 5, true);
+                return mov
+            }
+
+            point_counter(board){
+                var result = 0
+                for( var i=0; i<size; i++){
+                    for(var j=0; j<size; j++){
+                        if(this.color == "W"){
+                            if(board[i][j]=='W') result++
+                        } else{
+                            if(board[i][j]=='B') result++
+                        }
+                    }
+                }
+                return result
+            }
+
+            rival_color(){
+                if(this.color == 'W'){
+                    return 'B'
+                }
+                return 'W'
+            }
+
+            eval_minimax(board, depth, max){
+
+                if (depth == 0){    
+                    return {evaluation: point_counter(this.board), mov: [0,0]}
+                }   
+
+                var node = [0,0]
+                
+                if(max){
+                    var max_eval = -1
+                    var moves = this.board.valid_moves(board, this.color)
+                    moves.forEach(element => {
+                        temp_board = this.board.clone(board)
+                        this.board.move(temp_board, element[0], element[1], this.color)
+                        const {evaluation, mov} = this.eval_minimax(this.board, 5, true);
+
+                        if (evaluation > max_eval){
+                            max_eval = evaluation
+                            node = element
+                        }
+                    });
+                    return { evaluation: max_eval, mov: node };
+                }
+
+                else{
+                    var min_eval = 65
+                    var moves = this.board.valid_moves(board, rival_color())
+                    moves.forEach(element => {
+                        temp_board = this.board.clone(board)
+                        this.board.move(temp_board, element[0], element[1], rival_color())
+                        const {evaluation, mov} = this.eval_minimax(this.board, 5, true);
+
+                        if (evaluation < min_eval){
+                            min_eval = evaluation
+                            node = element
+
+                        }
+
+                    });
+                    return { evaluation: min_eval, mov: node };
+                }                
+            }
+                              
+        }
+        
+
         /*
         * Environment (Cannot be modified or any of its attributes accesed directly)
         */
@@ -378,7 +457,9 @@
                 'rand1': new RandomPlayer(),
                 'rand2': new RandomPlayer(),
                 'greed1': new GreedyPlayer(),
-                'greed2': new GreedyPlayer()
+                'greed2': new GreedyPlayer(),
+                'mini1': new MinimaxPlayer(),
+                'mini2': new MinimaxPlayer()
                 }
             }
 
