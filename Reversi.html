@@ -433,7 +433,6 @@
               }
             }
           });
-          //for(var i=0; i<5000000000; i++){}
           return node;
         }
       }
@@ -445,8 +444,10 @@
         }
 
         compute(board, time) {
-          console.log(this.eval_minimax(board, 5, true));
-          const { evaluation, mov } = this.eval_minimax(board, 5, true);
+          //const { evaluation, mov } = this.eval_minimax(board, 6, true);
+          var move = this.take_corner(board);
+          if (move) {return move;}
+          const { evaluation, mov } = this.alpha_beta(board, 6, true, -69, (board.length * board.length));
           return mov;
         }
 
@@ -471,6 +472,95 @@
           return "W";
         }
 
+        take_corner(board) {
+          var moves = this.board.valid_moves;
+          for (var i = 0; i < moves.length; i++) {
+            if (moves[i] == [0,0] || 
+                moves[i] == [0, board.length - 1] || 
+                moves[i] == [board.length - 1, 0] || 
+                moves[i] == [board.length - 1, board.length - 1] ){
+              return moves[i];
+            }
+          }
+        }
+
+        alpha_beta(board, depth, max, alpha, beta) {
+
+          if (depth == 0) {
+            return { evaluation: this.point_counter(board), mov: [0, 0] };
+          }
+
+          var node = [0, 0];
+          
+          if (max) {
+            //var max_eval = -1;
+            var moves = this.board.valid_moves(board, this.color);
+            if (moves.length == 0) { //para validar, para pensar señores
+              return { evaluation: this.point_counter(board), mov: [0, 0] };
+            }
+
+            for (var i = 0; i < moves.length; i++) {
+              var element = moves[i]
+              var temp_board = this.board.clone(board);
+              this.board.move(temp_board, element[0], element[1], this.color);
+
+              const { evaluation, mov } = this.alpha_beta(  
+                temp_board,
+                depth - 1,
+                false,
+                alpha,
+                beta
+              );
+
+              if (evaluation > alpha) {
+                alpha = evaluation;
+                node = element;
+                if (alpha >= beta) {
+                  break
+                }
+              }
+            }
+            console.log('max')
+            console.log(alpha, node)
+            return { evaluation: alpha, mov: node };
+          } else {
+            //var min_eval = 65;
+            var moves = this.board.valid_moves(board, this.rival_color());
+            if (moves.length == 0) {
+              return this.eval_minimax(board, depth - 1, true);
+            }
+
+            for (var i = 0; i < moves.length; i++) {
+              var element = moves[i]
+              var temp_board = this.board.clone(board);
+              this.board.move(
+                temp_board,
+                element[0],
+                element[1],
+                this.rival_color()
+              );
+              const { evaluation, mov } = this.alpha_beta(
+                temp_board,
+                depth - 1,
+                true,
+                alpha,
+                beta
+              );
+
+              if (evaluation < beta) {
+                beta = evaluation;
+                node = element;
+                if (alpha >= beta) {
+                  break
+                }
+              }
+            }
+            console.log('min')
+            console.log(beta, node)
+            return { evaluation: beta, mov: node };
+          }
+        }
+
         eval_minimax(board, depth, max) {
           if (depth == 0) {
             return { evaluation: this.point_counter(board), mov: [0, 0] };
@@ -484,7 +574,6 @@
             if (moves.length == 0) {
               return { evaluation: this.point_counter(board), mov: [0, 0] };
             }
-            console.log(moves);
             moves.forEach((element) => {
               var temp_board = this.board.clone(board);
               this.board.move(temp_board, element[0], element[1], this.color);
@@ -499,7 +588,6 @@
                 node = element;
               }
             });
-            console.log(max_eval, node);
             return { evaluation: max_eval, mov: node };
           } else {
             var min_eval = 65;
@@ -558,7 +646,7 @@
 
           var white = "mini1"; // Name of competitor with white pieces
           var black = "rand1"; // Name of competitor with black pieces
-          var time = 1000 * parseInt("5000"); // Maximum playing time assigned to a competitor (milliseconds)
+          var time = 1000 * parseInt("2000"); // Maximum playing time assigned to a competitor (milliseconds)
           var size = parseInt("8"); // Size of the reversi board
           this.size = size;
           this.b = this.board.init(size);
