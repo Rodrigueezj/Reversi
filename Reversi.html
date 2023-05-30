@@ -631,7 +631,7 @@
           //const { evaluation, mov } = this.eval_minimax(board, 6, true);
           var move = this.take_corner(board);
           if (move) {return move;}
-          const { evaluation, mov } = this.alpha_beta(board, 6, true, -69, (board.length * board.length));
+          const { evaluation, mov } = this.alpha_beta(board, 4, true, -69, (board.length * board.length));
           return mov;
         }
 
@@ -841,10 +841,10 @@
           //var time = 1000 * parseInt(Konekti.vc("time").value); // Maximum playing time assigned to a competitor (milliseconds)
           //var size = parseInt(Konekti.vc("size").value); // Size of the reversi board
 
-          var white = "rand1"; // Name of competitor with white pieces
-          var black = "maxi2"; // Name of competitor with black pieces
+          var white = "mini1"; // Name of competitor with white pieces
+          var black = "greed2"; // Name of competitor with black pieces
           var time = 1000 * parseInt("2000"); // Maximum playing time assigned to a competitor (milliseconds)
-          var size = parseInt("8"); // Size of the reversi board
+          var size = parseInt("15"); // Size of the reversi board
           this.size = size;
           this.b = this.board.init(size);
           this.board.print(this.b);
