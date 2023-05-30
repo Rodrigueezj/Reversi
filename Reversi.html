@@ -437,7 +437,7 @@
         }
       }
 
-      class MinimaxPlayer extends Agent {
+      class MaximaxPlayer extends Agent {
         constructor() {
           super();
           this.board = new Board();
@@ -447,12 +447,26 @@
           //const { evaluation, mov } = this.eval_minimax(board, 6, true);
           var move = this.take_corner(board);
           if (move) {return move;}
-          const { evaluation, mov } = this.alpha_beta(board, 6, true, -69, (board.length * board.length));
+          const { evaluation, mov } = this.alpha_beta(board, 5, true, -69, (board.length * board.length));
           return mov;
+        }
+
+        total_point_counter(board) {
+          var result = 0;
+          var size = board.length;
+          for (var i = 0; i < size; i++) {
+            for (var j = 0; j < size; j++) {
+              if (board[i][j] == "W" || board[i][j] == "B") {
+                result++;
+              }
+            }
+          } 
+          return result;
         }
 
         point_counter(board) {
           var result = 0;
+          var size = board.length;
           for (var i = 0; i < size; i++) {
             for (var j = 0; j < size; j++) {
               if (this.color == "W") {
@@ -472,8 +486,317 @@
           return "W";
         }
 
+        eval(board) {
+
+          //terminal case
+          console.log('my moves', this.board.valid_moves(board, this.color));
+
+          console.log('my opponent moves', this.board.valid_moves(board, this.rival_color()));
+          if (!(this.board.valid_moves(board, this.color) != 0 || this.board.valid_moves(board, this.rival_color()) != 0)){
+            console.log('this is the end, no one has moves', this.eval_disc_diff(board))
+            return 1000 * this.eval_disc_diff(board)
+          }
+
+          //semi-terminal
+          switch (this.get_game_phase(board)) {
+            case 'EARLY':
+                return 1000*this.eval_corner(board) + 50*this.eval_mobility(board);
+            case 'MID':
+                return 1000*this.eval_corner(board) + 20*this.eval_mobility(board) + 10*this.eval_disc_diff(board);
+            case 'LATE':
+                return 1000*this.eval_corner(board) + 100*this.eval_mobility(board) + 500*this.eval_disc_diff(board);
+          }
+
+        }
+
+        get_game_phase(board) {
+          var size = board.length;
+          var total_pieces = this.total_point_counter(board)
+          if (total_pieces <= Math.pow(size,2)*0.3 && total_pieces > 0) {
+            return 'EARLY';}
+          else if (total_pieces < Math.pow(size,2)*0.6 && total_pieces >= Math.pow(size,2)*0.3) {
+            return 'MID';}
+          else if (total_pieces > Math.pow(size,2)*0.6 && total_pieces <= Math.pow(size,2)) {
+            return 'LATE'; 
+        }
+      }
+
+        eval_corner(board) {
+          var my_corners = 0
+          var rival_corners = 0 
+          var size = board.length;
+
+          if(board[0][0]==this.color) my_corners++;
+          if(board[size - 1][0]==this.color) my_corners++;
+          if(board[0][size - 1]==this.color) my_corners++;
+          if(board[size - 1][size - 1]==this.color) my_corners++;
+
+          if(board[0][0]==this.rival_color()) rival_corners++;
+          if(board[size - 1][0]==this.rival_color()) rival_corners++;
+          if(board[0][size - 1]==this.rival_color()) rival_corners++;
+          if(board[size - 1][size - 1]==this.rival_color()) rival_corners++;
+
+          return 100 * (my_corners - rival_corners) / (my_corners + rival_corners + 1);
+
+        }
+
+        eval_mobility(board) {
+          var my_moves = this.board.valid_moves(board, this.color).length
+          var rival_moves = this.board.valid_moves(board, this.rival_color()).length
+
+          return 100 * (my_moves - rival_moves) / (my_moves + rival_moves + 1);
+        }
+
+        eval_disc_diff(board) {
+          var my_pieces = this.point_counter(board)
+          var rival_pieces = this.point_counter(board)
+          return 100 * (my_pieces - rival_pieces) / (my_pieces + rival_pieces);
+        }
+
         take_corner(board) {
-          var moves = this.board.valid_moves;
+          var moves = this.board.valid_moves(board, this.color);
+          for (var i = 0; i < moves.length; i++) {
+            if (moves[i] == [0,0] || 
+                moves[i] == [0, board.length - 1] || 
+                moves[i] == [board.length - 1, 0] || 
+                moves[i] == [board.length - 1, board.length - 1] ){
+              return moves[i];
+            }
+          }
+        }
+
+        alpha_beta(board, depth, max, alpha, beta) {
+
+          if (depth == 0 ) {
+            console.log('evaluation in 0', this.eval(board))
+            return { evaluation: this.eval(board), mov: [0, 0] };
+          }
+
+          var node = [0, 0];
+          
+          if (max) {
+            //var max_eval = -1;
+            var moves = this.board.valid_moves(board, this.color);
+            if (moves.length == 0) { //para validar, para pensar señores
+              return { evaluation: this.eval(board), mov: [0, 0] };
+            }
+
+            for (var i = 0; i < moves.length; i++) {
+              var element = moves[i]
+              var temp_board = this.board.clone(board);
+              this.board.move(temp_board, element[0], element[1], this.color);
+
+              const { evaluation, mov } = this.alpha_beta(temp_board, depth - 1, false, alpha, beta);
+
+              if (evaluation > alpha) {
+                alpha = evaluation;
+                node = element;
+                if (alpha >= beta) {
+                  break
+                }
+              }
+            }    
+            return { evaluation: alpha, mov: node };
+            
+          } else {
+            //var min_eval = 65;
+            var moves = this.board.valid_moves(board, this.rival_color());
+            if (moves.length == 0) {
+              return this.eval(board);
+            }
+
+            for (var i = 0; i < moves.length; i++) {
+              var element = moves[i]
+              var temp_board = this.board.clone(board);
+              this.board.move(temp_board, element[0], element[1], this.rival_color());
+              
+              const { evaluation, mov } = this.alpha_beta(
+                temp_board,
+                depth - 1,
+                true,
+                alpha,
+                beta
+              );
+
+              if (evaluation < beta) {
+                beta = evaluation;
+                node = element;
+                if (alpha >= beta) {
+                  break
+                }
+              }
+            }
+            return { evaluation: beta, mov: node };
+          }
+        }
+
+        eval_minimax(board, depth, max) {
+          if (depth == 0) {
+            return { evaluation: this.eval(board), mov: [0, 0] };
+          }
+
+          var node = [0, 0];
+
+          if (max) {
+            var max_eval = -1;
+            var moves = this.board.valid_moves(board, this.color);
+            if (moves.length == 0) {
+              return { evaluation: this.eval(board), mov: [0, 0] };
+            }
+            moves.forEach((element) => {
+              var temp_board = this.board.clone(board);
+              this.board.move(temp_board, element[0], element[1], this.color);
+              const { evaluation, mov } = this.eval_minimax(
+                temp_board,
+                depth - 1,
+                false
+              );
+
+              if (evaluation > max_eval) {
+                max_eval = evaluation;
+                node = element;
+              }
+            });
+            return { evaluation: max_eval, mov: node };
+          } else {
+            var min_eval = 65;
+            var moves = this.board.valid_moves(board, this.rival_color());
+            if (moves.length == 0) {
+              return this.eval_minimax(board, depth - 1, true);
+            }
+            moves.forEach((element) => {
+              var temp_board = this.board.clone(board);
+              this.board.move(
+                temp_board,
+                element[0],
+                element[1],
+                this.rival_color()
+              );
+              const { evaluation, mov } = this.eval_minimax(
+                temp_board,
+                depth - 1,
+                true
+              );
+
+              if (evaluation < min_eval) {
+                min_eval = evaluation;
+                node = element;
+              }
+            });
+            return { evaluation: min_eval, mov: node };
+          }
+        }
+      }
+
+      class MinimaxPlayer extends Agent {
+        constructor() {
+          super();
+          this.board = new Board();
+        }
+
+        compute(board, time) {
+          //const { evaluation, mov } = this.eval_minimax(board, 6, true);
+          var move = this.take_corner(board);
+          if (move) {return move;}
+          const { evaluation, mov } = this.alpha_beta(board, 6, true, -69, (board.length * board.length));
+          return mov;
+        }
+
+        total_point_counter(board) {
+          var result = 0;
+          var size = board.length;
+          for (var i = 0; i < size; i++) {
+            for (var j = 0; j < size; j++) {
+              if (board[i][j] == "W" || board[i][j] == "B") result++;
+                result++;
+            }
+          }
+        }
+
+        point_counter(board) {
+          var result = 0;
+          var size = board.length;
+          for (var i = 0; i < size; i++) {
+            for (var j = 0; j < size; j++) {
+              if (this.color == "W") {
+                if (board[i][j] == "W") result++;
+              } else {
+                if (board[i][j] == "B") result++;
+              }
+            }
+          }
+          return result;
+        }
+
+        rival_color() {
+          if (this.color == "W") {
+            return "B";
+          }
+          return "W";
+        }
+
+        eval(board) {
+
+          //terminal case
+          if (this.board.valid_moves(board, this.color) == 0 && this.board.valid_moves(board, this.rival_color()) ){
+            return 1000 * eval_disc_diff(board, this.color)
+          }
+
+          //semi-terminal
+          switch (this.get_game_phase(board)) {
+            case 'EARLY':
+                return 1000*eval_corner(board) + 50*eval_mobility(board);
+            case 'MID':
+                return 1000*eval_corner(board) + 20*eval_mobility(board) + 10*eval_disc_diff(board);
+            case 'LATE':
+                return 1000*eval_corner(board) + 100*eval_mobility(board) + 500*eval_disc_diff(board) ;
+          }
+
+        }
+
+        get_game_phase(board) {
+          var size = board.length;
+          var total_pieces = total_point_counter(board)
+          if (total_pieces < Math.pow(size,2)*0.3) return 'EARLY';
+          else if (total_pieces <= Math.pow(size,2)*0.6) return 'MID';
+          else return 'LATE'
+        }
+
+        eval_corner(board) {
+          var my_corners = 0
+          var rival_corners = 0 
+          var size = board.length()
+
+          if(board[0][0]==player) my_corners++;
+          if(board[size - 1][0]==player) my_corners++;
+          if(board[0][size - 1]==player) my_corners++;
+          if(board[size - 1][size - 1]==player) my_corners++;
+
+          if(board[0][0]==oplayer) rival_corners++;
+          if(board[size - 1][0]==oplayer) rival_corners++;
+          if(board[0][size - 1]==oplayer) rival_corners++;
+          if(board[size - 1][size - 1]==oplayer) rival_corners++;
+
+          return 100 * (my_corners - rival_corners) / (my_corners + rival_corners + 1);
+
+        }
+
+        eval_mobility(board) {
+          var my_moves = this.board.valid_moves(board, this.color).length()
+          var rival_moves = this.board.valid_moves(board, this.rival_color()).length()
+
+          return 100 * (my_moves - rival_moves) / (my_moves + rival_moves + 1);
+        }
+
+        eval_disc_diff(board) {
+          var my_pieces = this.board.valid_moves(board, this.color)
+          var rival_pieces = this.board.valid_moves(board, this.rival_color())
+
+          return 100 * (my_pieces - rival_pieces) / (my_pieces + rival_pieces + 1)
+        }
+
+        take_corner(board) {
+          var moves = this.board.valid_moves(board, this.color);
           for (var i = 0; i < moves.length; i++) {
             if (moves[i] == [0,0] || 
                 moves[i] == [0, board.length - 1] || 
@@ -520,8 +843,6 @@
                 }
               }
             }
-            console.log('max')
-            console.log(alpha, node)
             return { evaluation: alpha, mov: node };
           } else {
             //var min_eval = 65;
@@ -555,8 +876,6 @@
                 }
               }
             }
-            console.log('min')
-            console.log(beta, node)
             return { evaluation: beta, mov: node };
           }
         }
@@ -633,7 +952,10 @@
             greed1: new GreedyPlayer(),
             greed2: new GreedyPlayer(),
             mini1: new MinimaxPlayer(),
-            mini2: new MinimaxPlayer(),
+            mini2: new MinimaxPlayer(),            
+            maxi1: new MaximaxPlayer(),
+            maxi2: new MaximaxPlayer(),
+
           };
         }
 
@@ -644,8 +966,8 @@
           //var time = 1000 * parseInt(Konekti.vc("time").value); // Maximum playing time assigned to a competitor (milliseconds)
           //var size = parseInt(Konekti.vc("size").value); // Size of the reversi board
 
-          var white = "mini1"; // Name of competitor with white pieces
-          var black = "rand1"; // Name of competitor with black pieces
+          var white = "rand1"; // Name of competitor with white pieces
+          var black = "maxi2"; // Name of competitor with black pieces
           var time = 1000 * parseInt("2000"); // Maximum playing time assigned to a competitor (milliseconds)
           var size = parseInt("8"); // Size of the reversi board
           this.size = size;
