@@ -23,7 +23,6 @@
   <body>
     <script>
       Konekti.uses("header", "navbar", "canvas");
-
       class Agent {
         constructor() {}
 
@@ -816,7 +815,7 @@
             mini2: new MinimaxPlayer(),            
             maxi1: new MaximaxPlayer(),
             maxi2: new MaximaxPlayer(),
-
+            jodaseai: new MinimaxPlayerT(),
           };
         }
 
@@ -827,10 +826,10 @@
           //var time = 1000 * parseInt(Konekti.vc("time").value); // Maximum playing time assigned to a competitor (milliseconds)
           //var size = parseInt(Konekti.vc("size").value); // Size of the reversi board
 
-          var white = "mini1"; // Name of competitor with white pieces
-          var black = "rand2"; // Name of competitor with black pieces
+          var white = "jodaseai"; // Name of competitor with white pieces
+          var black = "mini1"; // Name of competitor with black pieces
           var time = 1000 * parseInt("2000"); // Maximum playing time assigned to a competitor (milliseconds)
-          var size = parseInt("14"); // Size of the reversi board
+          var size = parseInt("20"); // Size of the reversi board
           this.size = size;
           this.b = this.board.init(size);
           this.board.print(this.b);
@@ -1108,6 +1107,8 @@
           height: "fit",
         });
       }
+    </script>
+    <script src="./agent.js">
     </script>
   </body>
 </html>

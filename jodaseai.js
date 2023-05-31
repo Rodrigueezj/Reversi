@@ -1,4 +1,4 @@
-class MinimaxPlayer extends Agent {
+class MinimaxPlayerT extends Agent {
     
     constructor() {
       super();
